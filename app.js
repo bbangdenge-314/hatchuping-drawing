@@ -187,6 +187,14 @@
     return store.get(k);
   }
 
+  // 메모리 보호: 오래된 동작은 버린다 (실행취소 40단계)
+  function addOp(op) {
+    const list = ops();
+    list.push(op);
+    while (list.length > 40) list.shift();
+    return op;
+  }
+
   /* ================= 레이어 렌더 ================= */
   function renderLayers() {
     const g = currentGuide();
@@ -524,7 +532,7 @@
     const op = { t: 'fill', x: spot[0] / K, y: spot[1] / K, color };
     buildFillCrop(op);
     if (!op._crop) return false;
-    ops().push(op);
+    addOp(op);
     paintFill(pctx, op);
     return true;
   }
@@ -600,7 +608,7 @@
       pts: [[p.x, p.y]],
       seed: (Math.random() * 1000) | 0,
     };
-    ops().push(op);
+    addOp(op);
     session = { kind: 'stroke', op, last: p };
     pctx.setTransform(K, 0, 0, K, 0, 0);
     dot(pctx, op);
@@ -648,7 +656,7 @@
       size: widthFor('stamp'),
       rot: (Math.random() - 0.5) * 0.5,
     };
-    ops().push(op);
+    addOp(op);
     pctx.setTransform(K, 0, 0, K, 0, 0);
     drawStampOp(pctx, op);
     pulse();
