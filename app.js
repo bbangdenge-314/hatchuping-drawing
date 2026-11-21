@@ -1097,6 +1097,7 @@
     hideHintReset();
     updateProgressSoon();
     saveSettings();
+    fitStage();
   }
 
   function hideHintReset() {
@@ -1127,6 +1128,24 @@
     if (s.size) state.size = s.size;
     state.muted = !!s.muted;
     state.hint = !!s.hint;
+  }
+
+  /* ================= 화면 맞춤 ================= */
+  function fitStage() {
+    const root = document.documentElement;
+    if (window.innerWidth > 1000) {
+      root.style.removeProperty('--stage-max');
+      return;
+    }
+    const h = (sel) => {
+      const el = $(sel);
+      return el ? el.getBoundingClientRect().height : 0;
+    };
+    const controls = state.mode === 'color' ? h('#controlsColor') : h('#controlsTrace');
+    const used = h('.topbar') + h('.guides-panel') + h('.progress') + controls + h('.tools-panel');
+    const avail = window.innerHeight - used - 78;
+    const size = Math.max(200, Math.min(window.innerWidth - 24, avail));
+    root.style.setProperty('--stage-max', size + 'px');
   }
 
   /* ================= 이벤트 연결 ================= */
@@ -1239,7 +1258,7 @@
       })
     );
 
-    window.addEventListener('resize', debounce(() => { resizeFx(); }, 180));
+    window.addEventListener('resize', debounce(() => { resizeFx(); fitStage(); }, 180));
   }
 
   /* ================= 초기화 ================= */
@@ -1292,6 +1311,7 @@
     resizeFx();
     renderGallery();
     updateProgress();
+    fitStage();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

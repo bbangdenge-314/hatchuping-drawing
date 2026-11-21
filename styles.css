@@ -477,8 +477,8 @@ body {
   cursor: pointer;
 }
 
-.trace-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 2px; }
-.trace-go { display: flex; gap: 10px; justify-content: center; }
+.trace-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 2px; }
+.trace-go { display: flex; gap: 10px; justify-content: center; align-items: center; }
 @media (min-width: 1001px) {
   .trace-go { width: 100%; }
 }
@@ -793,7 +793,7 @@ body {
   .guide-card { flex: 0 0 auto; flex-direction: column; width: 64px; height: 80px; padding: 4px; gap: 2px; border-radius: 13px; }
   .guide-thumb { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 9px; }
   .guide-meta { text-align: center; width: 100%; }
-  .guide-name { font-size: 9.5px; white-space: normal; word-break: keep-all; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .guide-name { font-size: 9.5px; white-space: normal; word-break: keep-all; line-height: 1.18; overflow: hidden; max-height: 2.5em; }
   .guide-tag { display: none; }
 
   .topbar { gap: 6px; padding: 7px 10px; }
@@ -813,7 +813,7 @@ body {
   .stage-wrap { gap: 6px; }
   .progress { padding: 4px 10px; }
   .progress-track { height: 8px; }
-  .stage { width: min(100%, max(240px, calc(100vh - 540px))); }
+  .stage { width: var(--stage-max, min(100%, 60vh)); }
 
   .stage { border-radius: 24px; box-shadow: 0 10px 26px rgba(231, 90, 151, .18), 0 0 0 4px rgba(255, 240, 247, .9); }
 
@@ -846,13 +846,13 @@ body {
   .vault-row { display: none; }
 
   /* 따라그리기 모드 모바일 컴백트 */
-  body.mode-trace .stage { width: min(100%, max(200px, calc(100vh - 584px))); }
   .step-bar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
   .step-bar::-webkit-scrollbar { display: none; }
   .step-chip { flex: 0 0 auto; padding: 8px 10px; }
   .step-chip .slabel { display: none; }
   .trace-actions { gap: 6px; }
   .trace-actions .chip { font-size: 11px; padding: 8px 10px; }
+  .trace-actions .chip#showAllBtn { min-width: 48px; height: 46px; border-radius: 16px; font-size: 17px; }
   .trace-actions .clbl { display: none; }
   .trace-actions .opacity-field { display: none; }
   .trace-actions .big-btn { font-size: 12.5px; padding: 10px 12px; }
@@ -886,7 +886,6 @@ body {
 }
 
 @media (max-width: 400px) {
-  .stage { width: min(100%, max(210px, calc(100vh - 528px))); }
   .big-btn { font-size: 11px; padding: 9px 7px; }
   .big-btn.done { font-size: 12.5px; padding: 10px 9px; }
   .controls { gap: 4px; }
