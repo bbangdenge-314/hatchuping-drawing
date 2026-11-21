@@ -213,18 +213,18 @@
     hintLayer.classList.toggle('is-on', colorMode && state.hint);
     hintLayer.classList.toggle('is-off', !colorMode);
     stageEl.classList.toggle('is-fill', colorMode && state.tool === 'fill');
-    stageHint.textContent = colorMode ? '톡 누르면 색이 철썩! 🎨' : '점선을 따라 그려 보세요 ✏️';
+    stageHint.textContent = colorMode ? '톡 누르면 색이 철썩! 🎨' : '연한 밑그림을 따라 그려 보세요 ✏️';
   }
 
   function refreshTraceSteps() {
     const tsvg = traceLayer.querySelector('svg');
     if (!tsvg) return;
     const free = currentGuide().free;
-    tsvg.classList.toggle('show-all', state.showAll || free);
-    tsvg.classList.toggle('faint', !free && state.step === 4);
+    tsvg.classList.toggle('show-all', !!(state.showAll || free));
     $$('.step', tsvg).forEach((el) => {
       const n = Number(el.getAttribute('data-step'));
-      el.classList.toggle('is-on', !free && n === state.step && state.step < 4);
+      el.classList.toggle('is-on', !free && n === state.step);
+      el.classList.toggle('is-past', !free && n < state.step);
     });
     tsvg.style.setProperty('--guide-alpha', state.guideAlpha);
   }
@@ -389,57 +389,48 @@
   const stack = new Int32Array(PAINT * PAINT);
   let maskData = null;
 
-  function lineMaskSvg(guide) {
-    return (
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="' + PAINT + '" height="' + PAINT + '">' +
-      '<g fill="none" stroke="#000" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">' +
-      window.guideLineArt(guide) +
-      '</g></svg>'
-    );
-  }
-
-  function lineDisplaySvg(guide) {
-    const art = guide.free ? (guide.coloring || '') : window.guideLineArt(guide);
-    return (
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="' + PAINT + '" height="' + PAINT + '">' +
-      '<style>.ink{fill:none;stroke:#43303c;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}' +
-      '.ink .thin{stroke-width:4.5}.ink .pupil{fill:#43303c}.ink .shine{fill:#ffffff}</style>' +
-      '<g class="ink">' + art + '</g></svg>'
-    );
-  }
-
-  function loadSvgImage(svg) {
-    return new Promise((resolve) => {
+  // 선화 PNG를 불러오는 캐시
+  const artCache = new Map();
+  function loadArt(src) {
+    if (artCache.has(src)) return artCache.get(src);
+    const p = new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
-      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      img.src = src;
     });
+    artCache.set(src, p);
+    return p;
   }
 
   function ensureMask(guide) {
     if (maskCache.has(guide.id)) return maskCache.get(guide.id).promise;
     const entry = { data: null, img: null };
     entry.promise = (async () => {
-      const [maskImg, displayImg] = await Promise.all([
-        loadSvgImage(lineMaskSvg(guide)),
-        loadSvgImage(lineDisplaySvg(guide)),
-      ]);
-      if (!maskImg) return null;
+      if (guide.free) {
+        // 백지 도안: 선이 없으니 캔버스 전체가 칠해질 수 있는 영역
+        entry.data = new Uint8Array(PAINT * PAINT);
+        return entry;
+      }
+      const art = await loadArt(window.guideAsset(guide.img));
+      if (!art) return null;
       const c = document.createElement('canvas');
       c.width = c.height = PAINT;
       const g = c.getContext('2d', { willReadFrequently: true });
       g.clearRect(0, 0, PAINT, PAINT);
-      g.drawImage(maskImg, 0, 0, PAINT, PAINT);
+      // 선을 살짝 두껍게 찍어 선 사이 미세한 틈으로 물감이 새지 않게 한다
+      [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]].forEach((d) =>
+        g.drawImage(art, d[0], d[1], PAINT, PAINT)
+      );
       const d = g.getImageData(0, 0, PAINT, PAINT).data;
       const arr = new Uint8Array(PAINT * PAINT);
       let linePixels = 0;
       for (let i = 0, j = 3; i < arr.length; i++, j += 4) {
-        if (d[j] > 60) { arr[i] = 1; linePixels++; }
+        if (d[j] > 120) { arr[i] = 1; linePixels++; }
       }
       entry.data = arr;
       entry.linePixels = linePixels;
-      entry.img = displayImg;
+      entry.img = art;
       return entry;
     })();
     maskCache.set(guide.id, entry);
@@ -683,12 +674,18 @@
   function coverage() {
     const entry = maskCache.get(currentGuide().id);
     const mask = entry && entry.data ? entry.data : null;
+    const cover = currentGuide().cover || [0, 0, LOGICAL, LOGICAL];
+    const cx0 = cover[0] * K, cy0 = cover[1] * K;
+    const cx1 = (cover[0] + cover[2]) * K, cy1 = (cover[1] + cover[3]) * K;
     const d = pctx.getImageData(0, 0, PAINT, PAINT).data;
     let c = 0;
     let total = 0;
     for (let i = 3; i < d.length; i += 16) {
       const p = (i - 3) / 4;
       if (mask && mask[p]) continue;
+      const x = p % PAINT;
+      const y = (p - x) / PAINT;
+      if (x < cx0 || x > cx1 || y < cy0 || y > cy1) continue;
       total++;
       if (d[i] > 12) c++;
     }
@@ -973,8 +970,11 @@
       b.type = 'button';
       b.className = 'guide-card' + (g.id === state.guideId ? ' is-active' : '');
       b.dataset.guide = g.id;
+      const thumb = g.free
+        ? '<span class="guide-thumb is-free">✏️</span>'
+        : '<span class="guide-thumb">' + window.guideLineSvg(g) + '</span>';
       b.innerHTML =
-        '<span class="guide-thumb">' + window.guideLineSvg(g) + '</span>' +
+        thumb +
         '<span class="guide-meta"><span class="guide-name">' + g.emoji + ' ' + g.name + '</span>' +
         '<span class="guide-tag">' + g.tag + '</span></span>';
       b.addEventListener('click', () => selectGuide(g.id));
@@ -1171,6 +1171,7 @@
     $('#soundBtn').addEventListener('click', () => {
       state.muted = !state.muted;
       $('#soundBtn').textContent = state.muted ? '🔇' : '🔊';
+    $('#showAllBtn').classList.toggle('is-on', !!state.showAll);
       Sound.unlock();
       if (!state.muted) Sound.pop();
       saveSettings();
@@ -1273,6 +1274,7 @@
     setColor(state.color);
     setTool(state.mode === 'color' ? state.tool : 'pen');
     $('#soundBtn').textContent = state.muted ? '🔇' : '🔊';
+    $('#showAllBtn').classList.toggle('is-on', !!state.showAll);
     $('#hintBtn').classList.toggle('is-on', state.hint);
     $('#modeCaption').textContent = state.mode === 'color' ? '색칠공부' : '따라그리기';
     document.body.classList.toggle('mode-trace', state.mode === 'trace');
@@ -1280,15 +1282,7 @@
     // 시작 화면 미리보기 그림
     const hp = GUIDES[0];
     const ca = $('#choiceArtColor');
-    if (ca) {
-      ca.innerHTML = window.guideLineSvg(hp);
-      const svg = ca.querySelector('svg');
-      if (svg) {
-        svg.querySelectorAll('.ink path, .ink circle, .ink ellipse').forEach((p) => {
-          if (p.classList.contains('thin')) p.style.strokeWidth = '5';
-        });
-      }
-    }
+    if (ca) ca.innerHTML = window.guideLineSvg(hp);
     const ct = $('#choiceArtTrace');
     if (ct) {
       ct.innerHTML = window.guideTraceSvg(hp);

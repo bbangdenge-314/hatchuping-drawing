@@ -217,13 +217,15 @@ body {
   overflow: hidden;
 }
 .guide-thumb svg { display: block; width: 100%; height: 100%; }
+.guide-thumb svg { display: block; width: 100%; height: 100%; }
+.guide-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 3px; }
+.guide-thumb.is-free { display: grid; place-items: center; font-size: 24px; }
 .guide-meta { min-width: 0; }
 .guide-name { display: block; font-size: 13.5px; font-weight: 900; color: var(--ink); white-space: nowrap; word-break: keep-all; }
 .guide-tag { display: block; font-size: 11px; font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
 
 /* 도안 썸네일 안의 선화 */
-.guide-thumb .ink { stroke: #5b3b4b; stroke-width: 9; }
-.guide-thumb .ink .thin { stroke-width: 6; }
+.guide-thumb .line-art { filter: brightness(.72) contrast(1.1); }
 
 /* ---------- 캔버스 ---------- */
 .stage-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -284,29 +286,23 @@ body {
 #lineLayer, #traceLayer, #hintLayer { pointer-events: none; }
 #fxCanvas { pointer-events: none; }
 
-/* 검은 선화 (색칠 모드) */
-.line-svg { display: block; width: 100%; height: 100%; }
-.line-svg .ink { stroke: #43303c; stroke-width: 7; fill: none; }
-.line-svg .ink .thin { stroke-width: 4.5; }
-.line-svg .ink circle { fill: none; }
-.line-svg .ink circle.pupil { fill: #43303c; }
-.line-svg .ink circle.shine { fill: #ffffff; }
-.line-svg .ink ellipse { fill: none; }
+/* 진짜 캐릭터 선화 (색칠 모드) */
+.line-art { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
 
-/* 연한 점선 가이드 (따라그리기 모드) */
+/* 연한 밑그림 (따라그리기 모드) */
 .trace-svg { display: block; width: 100%; height: 100%; opacity: var(--guide-alpha); transition: opacity .2s ease; }
-.trace-svg .step { stroke: #ff7fb4; stroke-width: 5; stroke-dasharray: 9 11; fill: none; opacity: 0; transition: opacity .25s ease; }
+.trace-svg .ghost { opacity: .14; }
+.trace-svg .step { opacity: 0; transition: opacity .25s ease; }
 .trace-svg .step.is-on { opacity: 1; }
-.trace-svg.show-all .step { opacity: .85; }
-.trace-svg .step .thin { stroke-width: 3.5; }
-.trace-svg .step circle.pupil,
-.trace-svg .step circle.shine { fill: none; }
-.trace-svg.faint .step { opacity: .28; }
-.trace-svg .free-frame { stroke-dasharray: 3 14; stroke: #ffb0cf; }
+.trace-svg .step.is-past { opacity: .45; }
+.trace-svg.show-all .step { opacity: .55; }
+.trace-svg.show-all .ghost { opacity: 0; }
+.trace-svg .free-frame { fill: none; stroke-dasharray: 5 14; stroke: #ffb0cf; stroke-width: 3; }
+.trace-svg .free-note { fill: #ffb0cf; font-size: 26px; font-weight: 800; font-family: inherit; }
 
 /* 색칠 예시 힌트 */
-.hint-svg { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .25s ease; mix-blend-mode: multiply; }
-#hintLayer.is-on .hint-svg { opacity: .72; }
+.hint-art { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .25s ease; mix-blend-mode: multiply; }
+#hintLayer.is-on .hint-art { opacity: .78; }
 
 .layer.is-off { display: none; }
 
@@ -643,9 +639,8 @@ body {
 
 .choice-art { width: min(190px, 52%); aspect-ratio: 1; display: block; }
 .choice-art svg { width: 100%; height: 100%; }
-.choice-art .ink { stroke: #4a3340; stroke-width: 8; }
-.choice-art .ink .thin { stroke-width: 5; }
-.choice-art .step { stroke: #ff8fbb; stroke-width: 5.5; stroke-dasharray: 9 11; opacity: 1; }
+.choice-art img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.choice-art .step { opacity: 1; }
 .choice-art .fills { opacity: .55; }
 
 .choice-emoji { font-size: 23px; margin-right: 3px; vertical-align: -2px; }
