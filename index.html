@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffe9f3">
+<meta name="description" content="하츄핑 색칠공부 & 따라그리기 — 5세 아이를 위한 핑크 파스텔 놀이터">
+<title>🩷 하츄핑 놀이터 · 색칠공부 &amp; 따라그리기</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A9%B7%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- ===== 시작 화면 ===== -->
+<div class="start" id="startScreen">
+  <div class="start-inner">
+    <div class="start-badge">🩷</div>
+    <h1 class="start-title">하츄핑 놀이터</h1>
+    <p class="start-sub">어떤 놀이를 해 볼까요?</p>
+
+    <div class="start-choices">
+      <button class="choice choice-color" data-mode="color">
+        <span class="choice-art" id="choiceArtColor"></span>
+        <span class="choice-text">
+          <span class="choice-title"><span class="choice-emoji">🎨</span> 색칠하기</span>
+          <span class="choice-desc">밑그림 위에 톡톡!<br>물감을 부어요</span>
+        </span>
+      </button>
+      <button class="choice choice-trace" data-mode="trace">
+        <span class="choice-art" id="choiceArtTrace"></span>
+        <span class="choice-text">
+          <span class="choice-title"><span class="choice-emoji">✏️</span> 따라그리기</span>
+          <span class="choice-desc">점선을 따라<br>한 단계씩 그려요</span>
+        </span>
+      </button>
+    </div>
+
+    <p class="start-foot">위쪽 버튼으로 언제든 바꿀 수 있어요 🩷</p>
+  </div>
+</div>
+
+<!-- ===== 상단 바 ===== -->
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-logo">🩷</span>
+    <div class="brand-text">
+      <h1>하츄핑 놀이터</h1>
+      <p id="modeCaption">색칠공부</p>
+    </div>
+  </div>
+
+  <div class="mode-switch" role="group" aria-label="놀이 모드">
+    <button class="mode-btn is-active" data-mode="color" type="button">🎨 색칠하기</button>
+    <button class="mode-btn" data-mode="trace" type="button">✏️ 따라그리기</button>
+  </div>
+
+  <div class="top-actions">
+    <button class="icon-btn" id="soundBtn" type="button" aria-label="소리 켜기/끄기" title="소리">🔊</button>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="실행 취소" title="실행 취소"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#e0548c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h9.5a4.5 4.5 0 0 1 0 9H9"></path><path d="M8.6 5.2 4.8 9l3.8 3.8"></path></svg></button>
+    <button class="pill-btn" id="galleryBtn" type="button">🖼️ <span class="lbl">내 그림첩</span> <span class="count" id="galleryCount">0</span></button>
+    <button class="pill-btn primary" id="downloadBtn" type="button">⬇️ <span class="lbl">PNG 저장</span></button>
+  </div>
+</header>
+
+<!-- ===== 본문 ===== -->
+<main class="layout">
+
+  <!-- 도안 -->
+  <aside class="panel guides-panel">
+    <h2 class="panel-title">도안 고르기</h2>
+    <div class="guide-list" id="guideList"></div>
+  </aside>
+
+  <!-- 캔버스 -->
+  <section class="stage-col">
+    <div class="stage-wrap">
+      <div class="progress" id="progressWrap" title="얼마나 채웠는지">
+        <span class="progress-heart" id="progressHeart">🩷</span>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <span class="progress-label" id="progressLabel">0%</span>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="layer" id="hintLayer"></div>
+        <canvas class="layer" id="paintCanvas"></canvas>
+        <div class="layer" id="lineLayer"></div>
+        <div class="layer" id="traceLayer"></div>
+        <canvas class="layer" id="fxCanvas"></canvas>
+        <div class="stage-hint" id="stageHint">톡 누르면 색이 철썩! 🎨</div>
+      </div>
+    </div>
+
+    <!-- 모드별 조작부 -->
+    <div class="controls" id="controlsColor">
+      <button class="big-btn ghost" id="hintBtn" type="button">💡 원래 색 힌트</button>
+      <button class="big-btn done" id="doneBtnColor" type="button">🎉 다 색칠했어요!</button>
+      <button class="big-btn ghost" id="resetBtnColor" type="button">🧼 다시 칠하기</button>
+    </div>
+
+    <div class="controls is-hidden" id="controlsTrace">
+      <div class="step-bar" id="stepBar"></div>
+      <div class="trace-actions">
+        <button class="chip is-on" id="showAllBtn" type="button">👀 <span class="clbl">전체 밑그림</span></button>
+        <label class="opacity-field">
+          <span>밑그림 진하기</span>
+          <input type="range" id="opacityRange" min="12" max="95" value="72" aria-label="밑그림 진하기">
+        </label>
+        <div class="trace-go">
+          <button class="big-btn done" id="doneBtnTrace" type="button">🎉 다 그렸어요!</button>
+          <button class="big-btn ghost" id="resetBtnTrace" type="button">🧼 처음부터</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 도구 -->
+  <aside class="panel tools-panel">
+    <h2 class="panel-title">그리기 도구</h2>
+
+    <div class="tool-grid" id="toolGrid">
+      <button class="tool" data-tool="fill" type="button">
+        <span class="tool-ico">🪣</span><span class="tool-name">페인트통</span>
+      </button>
+      <button class="tool" data-tool="crayon" type="button">
+        <span class="tool-ico">🖍️</span><span class="tool-name">크레파스</span>
+      </button>
+      <button class="tool" data-tool="pen" type="button">
+        <span class="tool-ico">🖊️</span><span class="tool-name">매직펜</span>
+      </button>
+      <button class="tool" data-tool="glitter" type="button">
+        <span class="tool-ico">&#x2728;&#xFE0F;</span><span class="tool-name">반짝이</span>
+      </button>
+      <button class="tool" data-tool="eraser" type="button">
+        <span class="tool-ico">🧽</span><span class="tool-name">지우개</span>
+      </button>
+      <button class="tool" id="undoBtn2" type="button">
+        <span class="tool-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#e0548c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h9.5a4.5 4.5 0 0 1 0 9H9"></path><path d="M8.6 5.2 4.8 9l3.8 3.8"></path></svg></span><span class="tool-name">실행취소</span>
+      </button>
+    </div>
+
+    <div class="size-row" id="sizeRow" role="group" aria-label="굵기">
+      <button class="size" data-size="1" type="button"><i class="dot s1"></i><span>가늘게</span></button>
+      <button class="size is-on" data-size="2" type="button"><i class="dot s2"></i><span>보통</span></button>
+      <button class="size" data-size="3" type="button"><i class="dot s3"></i><span>굵게</span></button>
+    </div>
+
+    <h2 class="panel-title small">색깔</h2>
+    <div class="palette" id="palette"></div>
+
+    <h2 class="panel-title small">스티커 도장</h2>
+    <div class="stamp-grid" id="stampGrid">
+      <button class="stamp" data-stamp="heart" type="button">&#x1F497;&#xFE0F;</button>
+      <button class="stamp" data-stamp="star" type="button">&#x2B50;&#xFE0F;</button>
+      <button class="stamp" data-stamp="ribbon" type="button">🎀</button>
+      <button class="stamp" data-stamp="sparkle" type="button">&#x2728;&#xFE0F;</button>
+    </div>
+
+    <div class="vault-row">
+      <button class="pill-btn wide" id="galleryBtn2" type="button">🖼️ 내 그림첩</button>
+      <button class="pill-btn wide primary" id="saveBtn" type="button">💾 그림첩에 저장</button>
+    </div>
+  </aside>
+</main>
+
+<!-- ===== 완성 모달 ===== -->
+<div class="modal" id="doneModal" hidden>
+  <div class="modal-card done-card">
+    <div class="burst" id="doneBurst">🎉</div>
+    <h2 id="doneTitle">우와, 멋져요!</h2>
+    <p id="doneText">하츄핑이 아주 예뻐졌어요</p>
+    <div class="sticker-earned" id="doneSticker">🩷</div>
+    <div class="modal-actions">
+      <button class="big-btn primary" id="doneSave" type="button">💾 그림첩에 저장</button>
+      <button class="big-btn ghost" id="doneClose" type="button">계속 놀기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 그림첩 모달 ===== -->
+<div class="modal" id="galleryModal" hidden>
+  <div class="modal-card gallery-card">
+    <div class="modal-head">
+      <h2>🖼️ 내 그림첩</h2>
+      <button class="icon-btn" id="galleryClose" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="sticker-shelf" id="stickerShelf"></div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <p class="gallery-empty" id="galleryEmpty">아직 저장한 그림이 없어요.<br>멋진 그림을 그리고 <b>그림첩에 저장</b>을 눌러 보세요!</p>
+    <button class="pill-btn wide primary" id="gallerySave" type="button">💾 지금 그림 저장하기</button>
+  </div>
+</div>
+
+<!-- ===== 확인 모달 ===== -->
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-card confirm-card">
+    <div class="burst">🧼</div>
+    <h2>정말 다 지울까요?</h2>
+    <p>그린 그림이 사라져요</p>
+    <div class="modal-actions">
+      <button class="big-btn ghost" id="confirmNo" type="button">아니요</button>
+      <button class="big-btn primary" id="confirmYes" type="button">지울래요</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 그림 크게 보기 ===== -->
+<div class="modal" id="viewModal" hidden>
+  <div class="modal-card view-card">
+    <div class="modal-head">
+      <h2 id="viewTitle">내 그림</h2>
+      <button class="icon-btn" id="viewClose" type="button" aria-label="닫기">✕</button>
+    </div>
+    <img id="viewImage" alt="저장한 그림">
+    <div class="modal-actions">
+      <button class="big-btn primary" id="viewDownload" type="button">⬇️ PNG로 저장</button>
+      <button class="big-btn ghost" id="viewDelete" type="button">🗑️ 지우기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="guides.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
